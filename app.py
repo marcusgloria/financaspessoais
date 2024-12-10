@@ -24,27 +24,30 @@ st.markdown("""
     """, unsafe_allow_html=True)  
 
 def main():  
-    st.title("🎯 Assistente de Controle Financeiro")  
+    st.title("📊 Assistente de Controle Financeiro")  
 
-    # Navegação usando tabs  
-    tab1, tab2, tab3, tab4 = st.tabs([  
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([  
         "Calculadora 50-30-20",  
-        "Gestor de Orçamento",  
+        "Simulador de Investimentos",  
         "Calculadora de Empréstimo",  
-        "Simulador de Investimentos" 
+        "Gestor de Orçamento",  
+        "Meta por Idade"  
     ])  
 
     with tab1:  
         calculadora_50_30_20()  
 
     with tab2:  
-        gestor_orcamento() 
+        simulador_investimentos()  
 
     with tab3:  
         calculadora_emprestimo()  
 
     with tab4:  
-        simulador_investimentos() 
+        gestor_orcamento()  
+
+    with tab5:  
+        meta_idade() 
 
 def calculadora_50_30_20():  
     st.header("📊 Calculadora 50-30-20")  
@@ -296,6 +299,116 @@ def gestor_orcamento():
     if st.button("Limpar Orçamento"):  
         st.session_state.orcamento = {'receitas': [], 'despesas': []}  
         st.experimental_rerun()  
+
+def meta_idade():  
+    st.header("🎯 Simulador de Meta por Idade")  
+    st.write("Calcule seu patrimônio ideal por idade e meta para liberdade financeira")  
+
+    # Criação de tabs para diferentes simulações  
+    tab1, tab2 = st.tabs(["Patrimônio Ideal por Idade", "Meta Liberdade Financeira"])  
+
+    with tab1:  
+        st.subheader("Calculadora de Patrimônio Ideal por Idade")  
+
+        col1, col2 = st.columns(2)  
+
+        with col1:  
+            custo_mensal = st.number_input(  
+                "Custo mensal de vida (R$):",   
+                min_value=0.0,   
+                format="%.2f",  
+                key="custo_mensal_idade"  
+            )  
+
+            idade = st.number_input(  
+                "Idade atual:",   
+                min_value=18,   
+                max_value=70,   
+                value=30,  
+                key="idade_atual"  
+            )  
+
+        with col2:  
+            capacidade_poupanca = st.slider(  
+                "Capacidade de poupança (%):",   
+                min_value=10.0,   
+                max_value=15.0,   
+                value=10.0,   
+                step=0.5,  
+                key="cap_poupanca"  
+            )  
+
+        if st.button("Calcular Patrimônio Ideal", key="calc_pat_ideal"):  
+            # Fórmula: Patrimônio Ideal = Custo Mensal * 12 * Idade * Capacidade de Poupança  
+            patrimonio_ideal = custo_mensal * 12 * idade * (capacidade_poupanca/100)  
+
+            st.metric(  
+                "Patrimônio Ideal para sua idade",   
+                f"R$ {patrimonio_ideal:,.2f}"  
+            )  
+
+            st.info(  
+                f"Com {idade} anos e um custo mensal de R$ {custo_mensal:,.2f}, "  
+                f"poupando {capacidade_poupanca}% da sua renda, "  
+                f"você deveria ter R$ {patrimonio_ideal:,.2f} acumulados."  
+            )  
+
+    with tab2:  
+        st.subheader("Calculadora de Meta para Liberdade Financeira")  
+
+        col1, col2 = st.columns(2)  
+
+        with col1:  
+            custo_mensal_lf = st.number_input(  
+                "Custo mensal desejado (R$):",   
+                min_value=0.0,   
+                format="%.2f",  
+                key="custo_mensal_lf"  
+            )  
+
+        with col2:  
+            rentabilidade_anual = st.number_input(  
+                "Rentabilidade anual esperada (%):",   
+                min_value=0.0,   
+                max_value=20.0,   
+                value=8.0,  
+                format="%.2f",  
+                key="rent_anual"  
+            )  
+
+        if st.button("Calcular Meta de Liberdade Financeira", key="calc_lf"):  
+            # Fórmula: Patrimônio LF = (Custo Mensal * 12) / (Rentabilidade Anual)  
+            patrimonio_lf = (custo_mensal_lf * 12) / (rentabilidade_anual/100)  
+
+            st.metric(  
+                "Patrimônio Necessário para Liberdade Financeira",   
+                f"R$ {patrimonio_lf:,.2f}"  
+            )  
+
+            # Calculando em quantos anos atingirá a meta  
+            if custo_mensal_lf > 0 and capacidade_poupanca > 0:  
+                poupanca_anual = custo_mensal_lf * 12 * (capacidade_poupanca/100)  
+                anos_para_lf = patrimonio_lf / (poupanca_anual)  
+
+                st.info(  
+                    f"Com uma poupança de {capacidade_poupanca}% do seu custo mensal "  
+                    f"e uma rentabilidade de {rentabilidade_anual}% ao ano, "  
+                    f"você atingirá sua liberdade financeira em aproximadamente "  
+                    f"{anos_para_lf:.1f} anos."  
+                )  
+
+        # Adicionar explicação sobre os cálculos  
+        with st.expander("ℹ️ Como os cálculos são feitos?"):  
+            st.write("""  
+            **Patrimônio Ideal por Idade:**  
+            - Fórmula: Custo Mensal × 12 × Idade × Capacidade de Poupança  
+            - Este cálculo indica quanto você deveria ter acumulado na sua idade atual  
+
+            **Meta para Liberdade Financeira:**  
+            - Fórmula: (Custo Mensal × 12) ÷ Rentabilidade Anual  
+            - Este valor representa quanto você precisa ter investido para viver dos rendimentos  
+            - A rentabilidade considerada deve ser real (descontada a inflação)  
+            """)  
 
 if __name__ == "__main__":  
     main()  
