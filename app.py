@@ -6,7 +6,7 @@ import numpy as np
 import numpy_financial as npf  
 
 # Configuração inicial da página  
-st.set_page_config(page_title="Controle Financeiro", layout="centered")  
+st.set_page_config(page_title="Controle Financeiro", page_icon="📊", layout="centered")  
 
 # Estilo personalizado  
 st.markdown("""  
