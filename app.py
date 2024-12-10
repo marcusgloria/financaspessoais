@@ -26,30 +26,11 @@ st.markdown("""
     </style>  
     """, unsafe_allow_html=True)  
 
-def main():  
-    st.title("🎯 Assistente de Controle Financeiro")  
-
-    # Navegação usando tabs  
-    tab1, tab2, tab3 = st.tabs([  
-        "Calculadora 50-30-20",  
-        "Simulador de Investimentos",  
-        "Calculadora de Empréstimo"  
-    ])  
-
-    with tab1:  
-        calculadora_50_30_20()  
-
-    with tab2:  
-        simulador_investimentos()  
-
-    with tab3:  
-        calculadora_emprestimo()  
-
 def calculadora_50_30_20():  
     st.header("📊 Calculadora 50-30-20")  
     st.write("Calcule a distribuição ideal do seu orçamento seguindo a regra 50-30-20")  
 
-    renda = st.number_input("Digite sua renda mensal:", min_value=0.0, format="%.2f")  
+    renda = st.number_input("Digite sua renda mensal:", min_value=0.0, format="%.2f", key="renda_50_30_20")  
 
     if renda > 0:  
         necessidades = renda * 0.5  
@@ -78,7 +59,6 @@ def calculadora_50_30_20():
             st.write("- Investimentos")  
             st.write("- Reserva de emergência")  
 
-        # Gráfico de pizza  
         fig = px.pie(  
             values=[necessidades, desejos, investimentos],  
             names=['Necessidades', 'Desejos', 'Investimentos'],  
@@ -92,12 +72,12 @@ def simulador_investimentos():
     col1, col2 = st.columns(2)  
 
     with col1:  
-        valor_inicial = st.number_input("Valor inicial:", min_value=0.0, format="%.2f")  
-        aporte_mensal = st.number_input("Aporte mensal:", min_value=0.0, format="%.2f")  
-        taxa_juros = st.number_input("Taxa de juros anual (%):", min_value=0.0, format="%.2f")  
-        periodo_anos = st.number_input("Período (anos):", min_value=1, max_value=50)  
+        valor_inicial = st.number_input("Valor inicial:", min_value=0.0, format="%.2f", key="valor_inicial_inv")  
+        aporte_mensal = st.number_input("Aporte mensal:", min_value=0.0, format="%.2f", key="aporte_mensal_inv")  
+        taxa_juros = st.number_input("Taxa de juros anual (%):", min_value=0.0, format="%.2f", key="taxa_juros_inv")  
+        periodo_anos = st.number_input("Período (anos):", min_value=1, max_value=50, key="periodo_anos_inv")  
 
-    if st.button("Calcular"):  
+    if st.button("Calcular Investimento", key="calc_investimento"):  
         taxa_mensal = (1 + taxa_juros/100)**(1/12) - 1  
         periodos = periodo_anos * 12  
 
@@ -108,7 +88,6 @@ def simulador_investimentos():
             valor_atual = valor_atual * (1 + taxa_mensal) + aporte_mensal  
             valores_acumulados.append(valor_atual)  
 
-        # Gráfico de evolução  
         fig = go.Figure()  
         fig.add_trace(go.Scatter(  
             x=list(range(periodos)),  
@@ -125,10 +104,8 @@ def simulador_investimentos():
         st.plotly_chart(fig)  
 
         st.metric("Valor Final", f"R$ {valores_acumulados[-1]:,.2f}")  
-        st.metric("Total Investido",   
-                 f"R$ {(valor_inicial + aporte_mensal * periodos):,.2f}")  
-        st.metric("Juros Acumulados",   
-                 f"R$ {(valores_acumulados[-1] - valor_inicial - aporte_mensal * periodos):,.2f}")  
+        st.metric("Total Investido", f"R$ {(valor_inicial + aporte_mensal * periodos):,.2f}")  
+        st.metric("Juros Acumulados", f"R$ {(valores_acumulados[-1] - valor_inicial - aporte_mensal * periodos):,.2f}")  
 
 def calculadora_emprestimo():  
     st.header("💳 Calculadora de Empréstimo")  
@@ -136,19 +113,16 @@ def calculadora_emprestimo():
     col1, col2 = st.columns(2)  
 
     with col1:  
-        valor_emprestimo = st.number_input("Valor do empréstimo:", min_value=0.0, format="%.2f")  
-        taxa_juros_anual = st.number_input("Taxa de juros anual (%):", min_value=0.0, format="%.2f")  
-        prazo_anos = st.number_input("Prazo (anos):", min_value=1, max_value=30)  
+        valor_emprestimo = st.number_input("Valor do empréstimo:", min_value=0.0, format="%.2f", key="valor_emp")  
+        taxa_juros_anual = st.number_input("Taxa de juros anual (%):", min_value=0.0, format="%.2f", key="taxa_juros_emp")  
+        prazo_anos = st.number_input("Prazo (anos):", min_value=1, max_value=30, key="prazo_anos_emp")  
 
-    if st.button("Calcular Empréstimo"):  
-        # Converter taxa anual para mensal  
+    if st.button("Calcular Empréstimo", key="calc_emprestimo"):  
         taxa_mensal = (1 + taxa_juros_anual/100)**(1/12) - 1  
         prazo_meses = prazo_anos * 12  
 
-        # Calcular prestação mensal  
         prestacao = npf.pmt(taxa_mensal, prazo_meses, -valor_emprestimo)  
 
-        # Calcular amortização e juros mês a mês  
         saldo_devedor = valor_emprestimo  
         amortizacoes = []  
         juros_pagos = []  
@@ -163,7 +137,6 @@ def calculadora_emprestimo():
             juros_pagos.append(juros)  
             saldos.append(saldo_devedor)  
 
-        # Métricas principais  
         total_pago = prestacao * prazo_meses  
         total_juros = total_pago - valor_emprestimo  
 
@@ -172,7 +145,6 @@ def calculadora_emprestimo():
         col2.metric("Total a Pagar", f"R$ {total_pago:,.2f}")  
         col3.metric("Total de Juros", f"R$ {total_juros:,.2f}")  
 
-        # Gráfico de evolução do saldo devedor  
         fig = go.Figure()  
         fig.add_trace(go.Scatter(  
             x=list(range(len(saldos))),  
@@ -188,7 +160,6 @@ def calculadora_emprestimo():
 
         st.plotly_chart(fig)  
 
-        # Tabela de amortização  
         df_amortizacao = pd.DataFrame({  
             'Prestação': [prestacao] * len(amortizacoes),  
             'Amortização': amortizacoes,  
@@ -198,6 +169,24 @@ def calculadora_emprestimo():
 
         st.subheader("Tabela de Amortização")  
         st.dataframe(df_amortizacao.style.format("{:.2f}"))  
+
+def main():  
+    st.title("🎯 Assistente de Controle Financeiro")  
+
+    tab1, tab2, tab3 = st.tabs([  
+        "Calculadora 50-30-20",  
+        "Simulador de Investimentos",  
+        "Calculadora de Empréstimo"  
+    ])  
+
+    with tab1:  
+        calculadora_50_30_20()  
+
+    with tab2:  
+        simulador_investimentos()  
+
+    with tab3:  
+        calculadora_emprestimo()  
 
 if __name__ == "__main__":  
     main()  
