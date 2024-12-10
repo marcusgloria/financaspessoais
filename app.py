@@ -38,13 +38,14 @@ def main():
         calculadora_50_30_20()  
 
     with tab2:  
-        simulador_investimentos()  
+        gestor_orcamento() 
+         
 
     with tab3:  
         calculadora_emprestimo()  
 
     with tab4:  
-        gestor_orcamento()  
+        simulador_investimentos() 
 
 def calculadora_50_30_20():  
     st.header("📊 Calculadora 50-30-20")  
