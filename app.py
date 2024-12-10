@@ -9,46 +9,44 @@ import base64
 from io import BytesIO  
 
 # Configuração inicial da página  
-st.set_page_config(page_title="Controle Financeiro", layout="wide")  
+st.set_page_config(page_title="Controle Financeiro", layout="centered")  
 
 def main():  
     st.title("🎯 Assistente de Controle Financeiro")  
 
-    # Sidebar com as opções de ferramentas  
-    st.sidebar.title("Navegação")  
-    opcao = st.sidebar.radio(  
-        "Escolha uma ferramenta:",  
-        ["Calculadora 50-30-20",  
-         "Simulador de Investimentos",  
-         "Calculadora de Dívidas",  
-         "Gestor de Orçamento",  
-         "Planejador de Metas",  
-         "Análise de Gastos"]  
-    )  
+    # Navegação usando tabs  
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([  
+        "Calculadora 50-30-20",  
+        "Simulador de Investimentos",  
+        "Calculadora de Dívidas",  
+        "Gestor de Orçamento",  
+        "Planejador de Metas"  
+    ])  
 
-    # Calculadora 50-30-20  
-    if opcao == "Calculadora 50-30-20":  
+    with tab1:  
         calculadora_50_30_20()  
 
-    # Simulador de Investimentos  
-    elif opcao == "Simulador de Investimentos":  
+    with tab2:  
         simulador_investimentos()  
 
-    # Calculadora de Dívidas  
-    elif opcao == "Calculadora de Dívidas":  
+    with tab3:  
         calculadora_dividas()  
 
-    # Gestor de Orçamento  
-    elif opcao == "Gestor de Orçamento":  
+    with tab4:  
         gestor_orcamento()  
 
-    # Planejador de Metas  
-    elif opcao == "Planejador de Metas":  
+    with tab5:  
         planejador_metas()  
 
-    # Análise de Gastos  
-    elif opcao == "Análise de Gastos":  
-        analise_gastos()  
+# [Mantenha todas as outras funções iguais]  
+# calculadora_50_30_20()  
+# simulador_investimentos()  
+# calculadora_dividas()  
+# gestor_orcamento()  
+# planejador_metas()  
+
+if __name__ == "__main__":  
+    main() 
 
 def calculadora_50_30_20():  
     st.header("📊 Calculadora 50-30-20")  
@@ -297,46 +295,3 @@ def planejador_metas():
     if st.button("Limpar todas as metas"):  
         st.session_state.metas = []  
         st.experimental_rerun()  
-
-def analise_gastos():  
-    st.header("📊 Análise de Gastos")  
-
-    # Upload de arquivo  
-    uploaded_file = st.file_uploader("Faça upload do seu extrato em CSV", type=['csv'])  
-
-    if uploaded_file is not None:  
-        try:  
-            df = pd.read_csv(uploaded_file)  
-
-            # Assumindo que o CSV tem colunas: data, descricao, valor, categoria  
-            st.subheader("Visão Geral dos Gastos")  
-
-            # Gráfico de gastos por categoria  
-            fig_categoria = px.pie(df, values='valor', names='categoria',  
-                                 title='Distribuição de Gastos por Categoria')  
-            st.plotly_chart(fig_categoria)  
-
-            # Gráfico de evolução temporal  
-            fig_temporal = px.line(df, x='data', y='valor',  
-                                 title='Evolução dos Gastos ao Longo do Tempo')  
-            st.plotly_chart(fig_temporal)  
-
-            # Estatísticas básicas  
-            st.subheader("Estatísticas")  
-            col1, col2, col3 = st.columns(3)  
-
-            with col1:  
-                st.metric("Total Gasto", f"R$ {df['valor'].sum():,.2f}")  
-            with col2:  
-                st.metric("Média Mensal", f"R$ {df['valor'].mean():,.2f}")  
-            with col3:  
-                st.metric("Maior Gasto", f"R$ {df['valor'].max():,.2f}")  
-
-            # Tabela detalhada  
-            st.subheader("Detalhamento dos Gastos")  
-            st.dataframe(df)  
-
-        except Exception as e:  
-            st.error(f"Erro ao processar o arquivo: {str(e)}")  
-    else:  
-        st.info("Por favor, faça upload de um arquivo CSV com seus gastos.")  
