@@ -29,9 +29,9 @@ def main():
     # Navegação usando tabs  
     tab1, tab2, tab3, tab4 = st.tabs([  
         "Calculadora 50-30-20",  
-        "Simulador de Investimentos",  
+        "Gestor de Orçamento",  
         "Calculadora de Empréstimo",  
-        "Gestor de Orçamento"  
+        "Simulador de Investimentos" 
     ])  
 
     with tab1:  
@@ -39,7 +39,6 @@ def main():
 
     with tab2:  
         gestor_orcamento() 
-         
 
     with tab3:  
         calculadora_emprestimo()  
