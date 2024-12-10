@@ -2,11 +2,8 @@ import streamlit as st
 import pandas as pd  
 import plotly.express as px  
 import plotly.graph_objects as go  
-from datetime import datetime  
 import numpy as np  
 import numpy_financial as npf  
-import base64  
-from io import BytesIO  
 
 # Configuração inicial da página  
 st.set_page_config(page_title="Controle Financeiro", layout="centered")  
@@ -25,6 +22,29 @@ st.markdown("""
     }  
     </style>  
     """, unsafe_allow_html=True)  
+
+def main():  
+    st.title("🎯 Assistente de Controle Financeiro")  
+
+    # Navegação usando tabs  
+    tab1, tab2, tab3, tab4 = st.tabs([  
+        "Calculadora 50-30-20",  
+        "Simulador de Investimentos",  
+        "Calculadora de Empréstimo",  
+        "Gestor de Orçamento"  
+    ])  
+
+    with tab1:  
+        calculadora_50_30_20()  
+
+    with tab2:  
+        simulador_investimentos()  
+
+    with tab3:  
+        calculadora_emprestimo()  
+
+    with tab4:  
+        gestor_orcamento()  
 
 def calculadora_50_30_20():  
     st.header("📊 Calculadora 50-30-20")  
@@ -110,7 +130,6 @@ def simulador_investimentos():
 def calculadora_emprestimo():  
     st.header("💳 Calculadora de Empréstimo")  
 
-    # Seleção do tipo de taxa  
     tipo_taxa = st.radio(  
         "Selecione o tipo de taxa de juros:",  
         ["Anual", "Mensal"],  
@@ -120,27 +139,12 @@ def calculadora_emprestimo():
     col1, col2 = st.columns(2)  
 
     with col1:  
-        valor_emprestimo = st.number_input(  
-            "Valor do empréstimo:",   
-            min_value=0.0,   
-            format="%.2f",   
-            key="valor_emp"  
-        )  
+        valor_emprestimo = st.number_input("Valor do empréstimo:", min_value=0.0, format="%.2f", key="valor_emp")  
 
         if tipo_taxa == "Anual":  
-            taxa_juros = st.number_input(  
-                "Taxa de juros anual (%):",   
-                min_value=0.0,   
-                format="%.2f",   
-                key="taxa_juros_emp"  
-            )  
+            taxa_juros = st.number_input("Taxa de juros anual (%):", min_value=0.0, format="%.2f", key="taxa_juros_emp")  
         else:  
-            taxa_juros = st.number_input(  
-                "Taxa de juros mensal (%):",   
-                min_value=0.0,   
-                format="%.2f",   
-                key="taxa_juros_emp_mensal"  
-            )  
+            taxa_juros = st.number_input("Taxa de juros mensal (%):", min_value=0.0, format="%.2f", key="taxa_juros_emp_mensal")  
 
     with col2:  
         tipo_prazo = st.radio(  
@@ -150,33 +154,20 @@ def calculadora_emprestimo():
         )  
 
         if tipo_prazo == "Anos":  
-            prazo = st.number_input(  
-                "Prazo (anos):",   
-                min_value=1,   
-                max_value=30,   
-                key="prazo_emp"  
-            )  
+            prazo = st.number_input("Prazo (anos):", min_value=1, max_value=30, key="prazo_emp")  
             prazo_meses = prazo * 12  
         else:  
-            prazo = st.number_input(  
-                "Prazo (meses):",   
-                min_value=1,   
-                max_value=360,   
-                key="prazo_meses_emp"  
-            )  
+            prazo = st.number_input("Prazo (meses):", min_value=1, max_value=360, key="prazo_meses_emp")  
             prazo_meses = prazo  
 
     if st.button("Calcular Empréstimo", key="calc_emprestimo"):  
-        # Conversão da taxa para mensal se necessário  
         if tipo_taxa == "Anual":  
             taxa_mensal = (1 + taxa_juros/100)**(1/12) - 1  
         else:  
             taxa_mensal = taxa_juros/100  
 
-        # Cálculo da prestação  
         prestacao = npf.pmt(taxa_mensal, prazo_meses, -valor_emprestimo)  
 
-        # Cálculo da amortização  
         saldo_devedor = valor_emprestimo  
         amortizacoes = []  
         juros_pagos = []  
@@ -193,11 +184,9 @@ def calculadora_emprestimo():
             saldos.append(saldo_devedor)  
             prestacoes.append(prestacao)  
 
-        # Cálculo dos totais  
         total_pago = prestacao * prazo_meses  
         total_juros = total_pago - valor_emprestimo  
 
-        # Exibição dos resultados  
         st.subheader("Resumo do Financiamento")  
         col1, col2, col3 = st.columns(3)  
 
@@ -205,14 +194,10 @@ def calculadora_emprestimo():
         col2.metric("Total a Pagar", f"R$ {total_pago:,.2f}")  
         col3.metric("Total de Juros", f"R$ {total_juros:,.2f}")  
 
-        # Taxa efetiva anual  
         taxa_efetiva_anual = (1 + taxa_mensal)**12 - 1  
         st.metric("Taxa Efetiva Anual", f"{taxa_efetiva_anual*100:.2f}%")  
 
-        # Gráfico de evolução do saldo devedor  
         fig = go.Figure()  
-
-        # Adicionar linha do saldo devedor  
         fig.add_trace(go.Scatter(  
             x=list(range(len(saldos))),  
             y=saldos,  
@@ -220,7 +205,6 @@ def calculadora_emprestimo():
             line=dict(color='blue')  
         ))  
 
-        # Adicionar linha do total pago  
         pagamentos_acumulados = [prestacao * (i+1) for i in range(len(saldos))]  
         fig.add_trace(go.Scatter(  
             x=list(range(len(pagamentos_acumulados))),  
@@ -238,7 +222,6 @@ def calculadora_emprestimo():
 
         st.plotly_chart(fig)  
 
-        # Tabela de amortização  
         df_amortizacao = pd.DataFrame({  
             'Parcela': range(1, len(amortizacoes) + 1),  
             'Prestação': prestacoes,  
@@ -257,33 +240,62 @@ def calculadora_emprestimo():
             })  
         )  
 
-        # Adicionar botão para download da tabela  
-        csv = df_amortizacao.to_csv(index=False)  
-        st.download_button(  
-            label="Download da Tabela de Amortização",  
-            data=csv,  
-            file_name="tabela_amortizacao.csv",  
-            mime="text/csv",  
-            key="download_tabela"  
-        )   
+def gestor_orcamento():  
+    st.header("📝 Gestor de Orçamento")  
 
-def main():  
-    st.title("🎯 Assistente de Controle Financeiro")  
+    # Inicializar dados de orçamento na session_state  
+    if 'orcamento' not in st.session_state:  
+        st.session_state.orcamento = {  
+            'receitas': [],  
+            'despesas': []  
+        }  
 
-    tab1, tab2, tab3 = st.tabs([  
-        "Calculadora 50-30-20",  
-        "Simulador de Investimentos",  
-        "Calculadora de Empréstimo"  
-    ])  
+    col1, col2 = st.columns(2)  
 
-    with tab1:  
-        calculadora_50_30_20()  
+    with col1:  
+        st.subheader("Adicionar Receita")  
+        desc_receita = st.text_input("Descrição da receita")  
+        valor_receita = st.number_input("Valor da receita", min_value=0.0)  
 
-    with tab2:  
-        simulador_investimentos()  
+        if st.button("Adicionar Receita"):  
+            st.session_state.orcamento['receitas'].append({  
+                'descricao': desc_receita,  
+                'valor': valor_receita  
+            })  
 
-    with tab3:  
-        calculadora_emprestimo()  
+    with col2:  
+        st.subheader("Adicionar Despesa")  
+        desc_despesa = st.text_input("Descrição da despesa")  
+        valor_despesa = st.number_input("Valor da despesa", min_value=0.0)  
+
+        if st.button("Adicionar Despesa"):  
+            st.session_state.orcamento['despesas'].append({  
+                'descricao': desc_despesa,  
+                'valor': valor_despesa  
+            })  
+
+    # Exibir resumo  
+    if st.session_state.orcamento['receitas'] or st.session_state.orcamento['despesas']:  
+        st.subheader("Resumo do Orçamento")  
+
+        total_receitas = sum(item['valor'] for item in st.session_state.orcamento['receitas'])  
+        total_despesas = sum(item['valor'] for item in st.session_state.orcamento['despesas'])  
+        saldo = total_receitas - total_despesas  
+
+        col1, col2, col3 = st.columns(3)  
+        col1.metric("Total Receitas", f"R$ {total_receitas:,.2f}")  
+        col2.metric("Total Despesas", f"R$ {total_despesas:,.2f}")  
+        col3.metric("Saldo", f"R$ {saldo:,.2f}")  
+
+        # Gráfico de despesas por categoria  
+        if st.session_state.orcamento['despesas']:  
+            df_despesas = pd.DataFrame(st.session_state.orcamento['despesas'])  
+            fig = px.pie(df_despesas, values='valor', names='descricao', title='Despesas por Categoria')  
+            st.plotly_chart(fig)  
+
+    if st.button("Limpar Orçamento"):  
+        st.session_state.orcamento = {'receitas': [], 'despesas': []}  
+        st.experimental_rerun()  
 
 if __name__ == "__main__":  
     main()  
