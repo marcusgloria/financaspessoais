@@ -110,25 +110,80 @@ def simulador_investimentos():
 def calculadora_emprestimo():  
     st.header("💳 Calculadora de Empréstimo")  
 
+    # Seleção do tipo de taxa  
+    tipo_taxa = st.radio(  
+        "Selecione o tipo de taxa de juros:",  
+        ["Anual", "Mensal"],  
+        key="tipo_taxa_emp"  
+    )  
+
     col1, col2 = st.columns(2)  
 
     with col1:  
-        valor_emprestimo = st.number_input("Valor do empréstimo:", min_value=0.0, format="%.2f", key="valor_emp")  
-        taxa_juros_anual = st.number_input("Taxa de juros anual (%):", min_value=0.0, format="%.2f", key="taxa_juros_emp")  
-        prazo_anos = st.number_input("Prazo (anos):", min_value=1, max_value=30, key="prazo_anos_emp")  
+        valor_emprestimo = st.number_input(  
+            "Valor do empréstimo:",   
+            min_value=0.0,   
+            format="%.2f",   
+            key="valor_emp"  
+        )  
+
+        if tipo_taxa == "Anual":  
+            taxa_juros = st.number_input(  
+                "Taxa de juros anual (%):",   
+                min_value=0.0,   
+                format="%.2f",   
+                key="taxa_juros_emp"  
+            )  
+        else:  
+            taxa_juros = st.number_input(  
+                "Taxa de juros mensal (%):",   
+                min_value=0.0,   
+                format="%.2f",   
+                key="taxa_juros_emp_mensal"  
+            )  
+
+    with col2:  
+        tipo_prazo = st.radio(  
+            "Selecione o tipo de prazo:",  
+            ["Anos", "Meses"],  
+            key="tipo_prazo_emp"  
+        )  
+
+        if tipo_prazo == "Anos":  
+            prazo = st.number_input(  
+                "Prazo (anos):",   
+                min_value=1,   
+                max_value=30,   
+                key="prazo_emp"  
+            )  
+            prazo_meses = prazo * 12  
+        else:  
+            prazo = st.number_input(  
+                "Prazo (meses):",   
+                min_value=1,   
+                max_value=360,   
+                key="prazo_meses_emp"  
+            )  
+            prazo_meses = prazo  
 
     if st.button("Calcular Empréstimo", key="calc_emprestimo"):  
-        taxa_mensal = (1 + taxa_juros_anual/100)**(1/12) - 1  
-        prazo_meses = prazo_anos * 12  
+        # Conversão da taxa para mensal se necessário  
+        if tipo_taxa == "Anual":  
+            taxa_mensal = (1 + taxa_juros/100)**(1/12) - 1  
+        else:  
+            taxa_mensal = taxa_juros/100  
 
+        # Cálculo da prestação  
         prestacao = npf.pmt(taxa_mensal, prazo_meses, -valor_emprestimo)  
 
+        # Cálculo da amortização  
         saldo_devedor = valor_emprestimo  
         amortizacoes = []  
         juros_pagos = []  
         saldos = []  
+        prestacoes = []  
 
-        for _ in range(int(prazo_meses)):  
+        for i in range(int(prazo_meses)):  
             juros = saldo_devedor * taxa_mensal  
             amortizacao = prestacao - juros  
             saldo_devedor -= amortizacao  
@@ -136,39 +191,81 @@ def calculadora_emprestimo():
             amortizacoes.append(amortizacao)  
             juros_pagos.append(juros)  
             saldos.append(saldo_devedor)  
+            prestacoes.append(prestacao)  
 
+        # Cálculo dos totais  
         total_pago = prestacao * prazo_meses  
         total_juros = total_pago - valor_emprestimo  
 
+        # Exibição dos resultados  
+        st.subheader("Resumo do Financiamento")  
         col1, col2, col3 = st.columns(3)  
+
         col1.metric("Prestação Mensal", f"R$ {prestacao:,.2f}")  
         col2.metric("Total a Pagar", f"R$ {total_pago:,.2f}")  
         col3.metric("Total de Juros", f"R$ {total_juros:,.2f}")  
 
+        # Taxa efetiva anual  
+        taxa_efetiva_anual = (1 + taxa_mensal)**12 - 1  
+        st.metric("Taxa Efetiva Anual", f"{taxa_efetiva_anual*100:.2f}%")  
+
+        # Gráfico de evolução do saldo devedor  
         fig = go.Figure()  
+
+        # Adicionar linha do saldo devedor  
         fig.add_trace(go.Scatter(  
             x=list(range(len(saldos))),  
             y=saldos,  
-            name='Saldo Devedor'  
+            name='Saldo Devedor',  
+            line=dict(color='blue')  
+        ))  
+
+        # Adicionar linha do total pago  
+        pagamentos_acumulados = [prestacao * (i+1) for i in range(len(saldos))]  
+        fig.add_trace(go.Scatter(  
+            x=list(range(len(pagamentos_acumulados))),  
+            y=pagamentos_acumulados,  
+            name='Total Pago',  
+            line=dict(color='green')  
         ))  
 
         fig.update_layout(  
-            title='Evolução do Saldo Devedor',  
+            title='Evolução do Financiamento',  
             xaxis_title='Meses',  
-            yaxis_title='Valor (R$)'  
+            yaxis_title='Valor (R$)',  
+            hovermode='x unified'  
         )  
 
         st.plotly_chart(fig)  
 
+        # Tabela de amortização  
         df_amortizacao = pd.DataFrame({  
-            'Prestação': [prestacao] * len(amortizacoes),  
+            'Parcela': range(1, len(amortizacoes) + 1),  
+            'Prestação': prestacoes,  
             'Amortização': amortizacoes,  
             'Juros': juros_pagos,  
             'Saldo Devedor': saldos  
         })  
 
         st.subheader("Tabela de Amortização")  
-        st.dataframe(df_amortizacao.style.format("{:.2f}"))  
+        st.dataframe(  
+            df_amortizacao.style.format({  
+                'Prestação': 'R$ {:.2f}',  
+                'Amortização': 'R$ {:.2f}',  
+                'Juros': 'R$ {:.2f}',  
+                'Saldo Devedor': 'R$ {:.2f}'  
+            })  
+        )  
+
+        # Adicionar botão para download da tabela  
+        csv = df_amortizacao.to_csv(index=False)  
+        st.download_button(  
+            label="Download da Tabela de Amortização",  
+            data=csv,  
+            file_name="tabela_amortizacao.csv",  
+            mime="text/csv",  
+            key="download_tabela"  
+        )   
 
 def main():  
     st.title("🎯 Assistente de Controle Financeiro")  
