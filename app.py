@@ -340,9 +340,3 @@ def analise_gastos():
             st.error(f"Erro ao processar o arquivo: {str(e)}")  
     else:  
         st.info("Por favor, faça upload de um arquivo CSV com seus gastos.")  
-
-        # Exemplo de formato esperado  
-        st.write("Formato esperado do CSV:")  
-        exemplo_df = pd.DataFrame({  
-            'data': ['2024-01-01', '2024-01-02'],  
-            'descricao': ['Supermercado', 'Restaurante'],  
